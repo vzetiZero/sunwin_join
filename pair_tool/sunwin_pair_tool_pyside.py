@@ -544,7 +544,7 @@ def do_pair(auth1, auth2, bet, gid, mu, log, stop, pwd=''):
             if done: break
             time.sleep(1.5)
         if done:
-            log("✅ ĐÃ GHÉP 2 ACC VÀO BÀN SOLO %s  (%s + %s)" % (soban, dn1, dn2))
+            log("✅ ĐÃ GHÉP 2 ACC VÀO CÙNG BÀN %s  (%s + %s)" % (soban, dn1, dn2))
             log("[Tìm bàn] Đang giữ kết nối... (bấm Dừng để ngắt)")
             while not stop[0]:
                 for w in (c1, c2):
@@ -595,7 +595,7 @@ class Main(QMainWindow):
         self.rows = []
 
         self.setWindowTitle("Sunwin Pair Tool — bàn SOLO (PySide6)")
-        self.resize(940, 620)
+        self.resize(1060, 620)
         self.setStyleSheet(STYLE)
 
         central = QWidget(); self.setCentralWidget(central)
@@ -630,6 +630,10 @@ class Main(QMainWindow):
         bar = QHBoxLayout()
         bar.addWidget(QLabel("Cược:"))
         self.bet = QComboBox(); self.bet.addItems(BET_LABELS); self.bet.setCurrentText('100'); bar.addWidget(self.bet)
+        bar.addWidget(QLabel("Số người:"))
+        self.mu = QComboBox(); self.mu.addItems(['2', '3', '4']); self.mu.setCurrentText('2'); self.mu.setFixedWidth(48)
+        self.mu.setToolTip("Sức chứa bàn (Mu). TLMN solo = 2; Sâm Lốc thường 4.")
+        bar.addWidget(self.mu)
         bar.addWidget(QLabel("Sảnh game:"))
         self.game = QComboBox(); self.game.setEditable(True); self.game.setMinimumWidth(210)
         for _name, _gid in GID_MAP:
@@ -841,9 +845,11 @@ class Main(QMainWindow):
             QMessageBox.warning(self, "Thiếu gid", "Sảnh này chưa có gid.\nHãy gõ số gid vào ô 'Sảnh game' (ví dụ: 1).")
             return
         self.stop[0] = False
+        try: mu = int(self.mu.currentText())
+        except Exception: mu = 2
         def run():
             try:
-                do_pair(au1, au2, bet, gid, 2, log=lambda m: self.log(m), stop=self.stop)
+                do_pair(au1, au2, bet, gid, mu, log=lambda m: self.log(m), stop=self.stop)
             except Exception as e:
                 self.log("!! Lỗi ghép bàn: %s" % e)
                 self.log("   (Nếu là 522/Cloudflare — máy chủ game đang quá tải, chờ 1-2 phút rồi bấm GHÉP lại.)")
