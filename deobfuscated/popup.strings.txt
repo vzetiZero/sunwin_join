@@ -1,0 +1,28 @@
+0	tabs
+1	innerHTML
+2	/13 lá
+3	played
+4	Còn 
+5	map
+6	27824qOkNjr
+7	10HSiDkE
+8	<span class="card 
+9	<span class="empty">Chưa có</span>
+10	20968JXKobi
+11	GET_STATE
+12	remain
+13	7YlWzzl
+14	sendMessage
+15	getElementById
+16	query
+17	Còn — lá
+18	1341243JhEOTH
+19	4074856VoEZEE
+20	3250860DvXwVs
+21	16rFQgPt
+22	2462022SRfdsh
+23	textContent
+24	</span>
+25	7696018BtDReK
+26	135wqOQDg
+27	suit

@@ -1,0 +1,12 @@
+[
+  {
+    "name": "acc1",
+    "profile_id": "6fee69df-7149-4492-9bb7-dd6d0d1bf897",
+    "auth": "auth_acc1.json"
+  },
+  {
+    "name": "acc2",
+    "profile_id": "c21a0e18-9c9b-4902-8c5f-bc16fedc9fdc",
+    "auth": "auth_acc2.json"
+  }
+]

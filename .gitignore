@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.pyc
+
+# Backups / build
+*.bak
+*.bak2
+*.bak3
+*.bak4
+*.bak5
+*.bak6
+*.bak7
+*.bak8
+*.bak9
+*.bak10
+build/
+dist/
+*.spec
+
+# Secrets / runtime (KHONG public)
+control/known_names.json
+pair_tool/auth_*.json
+headless/auth_*.json
+pair_tool/last_room.json
+pair_tool/pair_tool.log
+headless/pair_log.txt
+pair_tool/_err.txt
+pair_tool/_out.txt
+_state.png
+
+# Logs
+*.log
