@@ -1,0 +1,4 @@
+# Thu vien cho tool ghep ban / headless Sunwin
+websocket-client>=1.6
+msgpack>=1.0
+PySide6>=6.5

@@ -18,7 +18,6 @@ dist/
 *.spec
 
 # Secrets / runtime (KHONG public)
-control/known_names.json
 pair_tool/auth_*.json
 headless/auth_*.json
 pair_tool/last_room.json
@@ -27,6 +26,9 @@ headless/pair_log.txt
 pair_tool/_err.txt
 pair_tool/_out.txt
 _state.png
+
+# Frame recorder (chua token)
+headless/frames_*.jsonl
 
 # Logs
 *.log
