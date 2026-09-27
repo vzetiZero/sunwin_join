@@ -68,21 +68,30 @@ def find_chrome():
     return shutil.which('chrome') or shutil.which('chrome.exe')
 def free_port():
     s = socket.socket(); s.bind(('127.0.0.1', 0)); p = s.getsockname()[1]; s.close(); return p
-def launch_chrome(url=GAME, incognito=True):
+def prof_dir(name):
+    d = os.path.join(HERE, "_profiles", name)
+    os.makedirs(d, exist_ok=True)
+    return d
+def launch_chrome(url=GAME, profile=None, incognito=False):
+    """profile: thu muc user-data-dir luu phien (de tu dang nhap lai khi gia han)."""
     chrome = find_chrome()
     if not chrome:
         return None, None, None
     port = free_port()
-    d = tempfile.mkdtemp(prefix='sunwin_')
-    args = [chrome, '--remote-debugging-port=%d' % port, '--user-data-dir=' + d,
+    tmp = None
+    if profile:
+        ud = profile
+    else:
+        ud = tempfile.mkdtemp(prefix='sunwin_'); tmp = ud
+    args = [chrome, '--remote-debugging-port=%d' % port, '--user-data-dir=' + ud,
             '--no-first-run', '--no-default-browser-check', '--disable-features=Translate']
     if incognito: args.append('--incognito')
     args.append(url)
     try:
         proc = subprocess.Popen(args)
     except Exception:
-        return None, None, None
-    return proc, port, d
+        return None, None, tmp
+    return proc, port, tmp
 def close_chrome(proc, tmpdir):
     try:
         if proc: proc.terminate()
@@ -397,7 +406,7 @@ class Main(QMainWindow):
             row.addWidget(QLabel("<b>%s</b>" % a.get('name','?')))
             r.status = QLabel(self.status_text(a)); row.addWidget(r.status)
             row.addStretch(1)
-            b = QPushButton("Đăng nhập lại" if load_auth(a) else "Lấy auth")
+            b = QPushButton("Gia hạn auth" if load_auth(a) else "Đăng nhập")
             b.clicked.connect(lambda _=False, aa=a: self.login_account(aa))
             row.addWidget(b)
             self.acc_box.addLayout(row)
@@ -445,17 +454,19 @@ class Main(QMainWindow):
 
     def login_account(self, a):
         def work():
-            self.log("Đang mở Chrome ẩn danh để đăng nhập cho %s..." % a.get('name'))
-            proc, port, tmp = launch_chrome(GAME, incognito=True)
+            existing = load_auth(a) is not None
+            pdir = prof_dir(a.get('name'))
+            self.log(("Gia hạn auth" if existing else "Đăng nhập") + " cho %s — mở Chrome..." % a.get('name'))
+            proc, port, tmp = launch_chrome(GAME, profile=pdir, incognito=False)
             if not port:
-                self.log("!! Không tìm thấy Chrome (chrome.exe). Cài Chrome hoặc cấu hình đường dẫn."); return
-            self.log("Chrome đã mở (debug %s). Hãy đăng nhập..." % port)
+                self.log("!! Không tìm thấy Chrome (chrome.exe)."); return
+            self.log("Chrome đã mở (debug %s). Nếu đã lưu đăng nhập, chờ tự vào game; nếu chưa thì đăng nhập." % port)
             try:
                 au = capture_auth(port, 150, log=lambda m: self.log(m))
             finally:
                 close_chrome(proc, tmp)
             if not au:
-                self.log("!! Chưa lấy được auth. Thử lại và đăng nhập đầy đủ."); return
+                self.log("!! Chưa lấy được auth. Thử lại (đăng nhập đầy đủ)."); return
             open(auth_path(a), 'w', encoding='utf-8').write(json.dumps(au, ensure_ascii=False))
             self.log("✔ Đã lưu auth cho %s (user=%s)" % (a.get('name'), au.get('username')))
         threading.Thread(target=work, daemon=True).start()

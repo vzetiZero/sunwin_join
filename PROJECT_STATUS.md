@@ -43,7 +43,8 @@ Repo: https://github.com/vzetiZero/sunwin_join
 ### 4. Tool `pair_tool/` — CHẠY ĐƯỢC
 - **PySide6, nền trắng** (`sunwin_pair_tool_pyside.py`).
 - **Bỏ GPM**: mở **Chrome ẩn danh** + remote-debug → vào trang đăng nhập → tự bắt auth → tự đóng Chrome.
-- **➕ Thêm acc** (đăng nhập acc mới) và **Đăng nhập lại** (acc hết hạn).
+- **➕ Thêm acc** (đăng nhập acc mới) và **Gia hạn auth** (mỗi acc 1 profile Chrome lưu phiên
+  → các lần sau **tự đăng nhập lại**, tự bắt auth mới, **không cần nhập mật khẩu**).
 - **Kiểm tra auth** trước khi ghép; **chọn tài khoản** (checkbox).
 - **⚡ GHÉP BÀN SOLO**: acc1 tạo bàn **2 người, không pass** → acc2 vào; tự thử lại; tự LEAVE bàn cũ; lọc ack đúng rid; xác minh chặt.
 - Log gọn: `[Tìm bàn] Server đang tìm...` → `✅ ĐÃ GHÉP 2 ACC VÀO BÀN SOLO <soBan>`.
@@ -55,7 +56,9 @@ Repo: https://github.com/vzetiZero/sunwin_join
 
 - [ ] **Start ván**: sau khi 2 acc vào bàn solo → gửi READY cho cả 2 để bắt đầu.
 - [ ] **Auto-xả (tự đánh) 2 người**: bắt frame `DEAL_CARDS` (cmd 250) để đọc **bài mình**, áp logic TLMN → gửi `DANH_BAI`/`PASS` (251/253/254), lặp tới `FINISH_GAME` (252).
-- [ ] **Gia hạn auth bằng `refreshToken`** (khỏi mở Chrome): cần bắt endpoint refresh `api.azhkthg1.com` 1 lần.
+- [ ] **Gia hạn auth headless 100% bằng `refresh_token`** (không mở Chrome): cần bắt endpoint
+      refresh/token (`refreshTokenURL`/`tokenEndpoint`, luồng OAuth/PKCE) 1 lần.
+      *Hiện tại "Gia hạn auth" dùng profile Chrome lưu phiên (tự đăng nhập lại).*
 - [ ] Dọn file rác (`.bak*`, `__pycache__`, probe tạm).
 - [ ] (Tùy chọn) Gộp bản Tk cũ (`sunwin_pair_tool.py`) vào bản PySide6.
 
