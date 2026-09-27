@@ -6,7 +6,7 @@ Sunwin Pair Tool (PySide6) - Ghép 2 tài khoản vào cùng 1 bàn SOLO, KHÔNG
 - "GHÉP BÀN SOLO": acc1 tạo bàn 2 người (không pass) -> acc2 vào; log gọn "server đang tìm".
 Cần: pip install websocket-client msgpack PySide6
 """
-import json, os, sys, time, threading, base64, urllib.request, subprocess, tempfile, socket, shutil
+import json, os, sys, time, threading, base64, re, urllib.request, subprocess, tempfile, socket, shutil
 from PySide6.QtCore import Qt, QObject, Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
@@ -23,6 +23,19 @@ ORIGIN = "https://web.sunwin.villas"
 BET_LABELS = ['100','500','1K','2K','5K','10K','20K','50K','100K','200K','500K','1M']
 BET_MAP = {'100':100,'500':500,'1K':1000,'2K':2000,'5K':5000,'10K':10000,'20K':20000,
            '50K':50000,'100K':100000,'200K':200000,'500K':500000,'1M':1000000}
+# Ten sanh -> gid (gameID). Nguon: config 'availableGames' client tai ve (prefabName ico_*).
+# TLMN = ico_TLMN = 1  ->  khop voi gid=1 dang dung => tin cay.
+GID_MAP = [
+    ("Tiến Lên Miền Nam (TLMN)", 1),
+    ("Sâm Lốc", 2),
+    ("Mậu Binh", 4),
+    ("Liêng", 5),
+    ("Poker", 6),
+    ("Xì Tố", 7),
+    ("Phỏm", 8),
+    ("Xì Dách (Blackjack)", 13),
+    ("Chắn", 408),
+]
 VERBOSE = False
 
 # ----------------------------- config -----------------------------
@@ -441,6 +454,20 @@ class Acc(object):
                     self.dn = d2.get('dn')
                 if 'ps' in d2:
                     self.players = [(p.get('dn'), p.get('pid')) for p in d2['ps']]
+            try:
+                s = str(m).lower()
+                if 'error' in s or 'not_enough' in s or 'insufficient' in s:
+                    log("%s: ⚠ server báo: %s" % (self.tag, _brief(m)))
+            except Exception:
+                pass
+
+def _brief(o, n=300):
+    try:
+        s = o if isinstance(o, str) else json.dumps(o, ensure_ascii=False, default=str)
+    except Exception:
+        s = str(o)
+    s = s.replace('\n', ' ')
+    return s if len(s) <= n else s[:n] + '...'
 
 def _create_room(auth1, gid, bet, mu, pwd, log):
     import msgpack
@@ -464,10 +491,14 @@ def _create_room(auth1, gid, bet, mu, pwd, log):
         except Exception: continue
         if isinstance(m, list) and len(m) >= 2 and isinstance(m[1], dict) and m[1].get('cmd') == 308 and m[1].get('ri'):
             ri = m[1]['ri']; return ri.get('rid'), ri.get('sid')
+        # In moi phan hoi khac de thay LOI THAT (het tien, sai cuoc, ...)
+        if isinstance(m, list) and len(m) >= 2 and m[0] == 1 and m[1] is True:
+            continue  # ack dang nhap
+        log("[Tạo bàn] Server trả về: %s" % _brief(m))
     return None, None
 
 def do_pair(auth1, auth2, bet, gid, mu, log, stop, pwd=''):
-    log("[Tìm bàn] Bắt đầu ghép 2 acc — bàn SOLO (%s người), cược %s, không pass" % (mu, bet))
+    log("[Tìm bàn] Bắt đầu ghép 2 acc — bàn SOLO (%s người), cược %s, gid %s, không pass" % (mu, bet, gid))
     tok1 = json.loads(auth1['info'])['wsToken']; tok2 = json.loads(auth2['info'])['wsToken']
     u1 = _uname(auth1); u2 = _uname(auth2)
     last = _load_last()
@@ -483,7 +514,7 @@ def do_pair(auth1, auth2, bet, gid, mu, log, stop, pwd=''):
         except Exception as e:
             log("[Tìm bàn] Máy chủ lỗi (522/Cloudflare?) (%s) — thử lại sau 3s..." % e); time.sleep(3); continue
         if not rid:
-            log("[Tìm bàn] Server chưa cho tạo bàn — đang thử lại..."); time.sleep(2); continue
+            log("[Tìm bàn] Server chưa cho tạo bàn (có thể HẾT TIỀN/không đủ cược, sai gid, hoặc server bận) — thử lại..."); time.sleep(2); continue
         soban = "%s%s" % (sid, rid)
         log("[Tìm bàn] Đã tạo bàn solo %s. Đang chờ 2 acc vào..." % soban)
         try:
@@ -599,8 +630,13 @@ class Main(QMainWindow):
         bar = QHBoxLayout()
         bar.addWidget(QLabel("Cược:"))
         self.bet = QComboBox(); self.bet.addItems(BET_LABELS); self.bet.setCurrentText('100'); bar.addWidget(self.bet)
-        bar.addWidget(QLabel("Game (gid):"))
-        self.gid = QLineEdit('1'); self.gid.setFixedWidth(50); bar.addWidget(self.gid)
+        bar.addWidget(QLabel("Sảnh game:"))
+        self.game = QComboBox(); self.game.setEditable(True); self.game.setMinimumWidth(210)
+        for _name, _gid in GID_MAP:
+            self.game.addItem("%s  (gid %s)" % (_name, _gid if _gid is not None else "?"), _gid)
+        self.game.setToolTip("Chọn sảnh theo TÊN — tool tự map ra gid.\n"
+                             "Sảnh nào còn 'gid ?' thì gõ số gid vào ô này (vd: 1).")
+        bar.addWidget(self.game)
         bar.addSpacing(8)
         self.btn_add = QPushButton("➕ Thêm acc"); self.btn_add.clicked.connect(self.add_account); bar.addWidget(self.btn_add)
         self.btn_check = QPushButton("Kiểm tra auth"); self.btn_check.setObjectName("blue"); self.btn_check.clicked.connect(self.check_auth); bar.addWidget(self.btn_check)
@@ -672,6 +708,14 @@ class Main(QMainWindow):
 
     def selected(self):
         return [r.acc for r in self.rows if r.chk.isChecked()]
+
+    def current_gid(self):
+        """Lay gid tu o 'Sảnh game': uu tien item data, neu nguoi dung tu go so thi lay so dau tien."""
+        d = self.game.currentData()
+        if isinstance(d, int):
+            return d
+        m = re.search(r'(\d+)', self.game.currentText() or '')
+        return int(m.group(1)) if m else None
 
     # ---- logging ----
     def append_log(self, m):
@@ -792,8 +836,10 @@ class Main(QMainWindow):
             QMessageBox.warning(self, "Ghép bàn", "Auth 1 trong 2 acc chưa có/hết hạn."); return
         try: bet = BET_MAP.get(self.bet.currentText(), 100)
         except Exception: bet = 100
-        try: gid = int(self.gid.text())
-        except Exception: gid = 1
+        gid = self.current_gid()
+        if gid is None:
+            QMessageBox.warning(self, "Thiếu gid", "Sảnh này chưa có gid.\nHãy gõ số gid vào ô 'Sảnh game' (ví dụ: 1).")
+            return
         self.stop[0] = False
         def run():
             try:

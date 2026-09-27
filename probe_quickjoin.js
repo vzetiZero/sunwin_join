@@ -1,13 +1,16 @@
 /* ============================================================================
  * Sunwin - Probe QUICK JOIN (Chơi nhanh / Vào bàn ngay)
  * Dung duoc cho MOI SANH: TLMN, Sam Loc, ...
- * Chay trong DevTools Console (context top) khi DANG O SANH (scene_tableView).
- * Ket qua in ra console + copy clipboard -> dan lai.
+ *
+ * >>> QUAN TRONG: phai DANG O TRONG SANH BAI (man danh sach ban), KHONG phai
+ *     sanh chinh. Neu scene la 'game' va tableListView = null thi chua vao sanh.
+ *
+ * Chay trong DevTools Console (context top). Ket qua in ra + copy clipboard.
  *
  * Muc dich:
- *   - Doc gameID cua sanh hien tai  -> chinh la gid can truyen khi tao/join ban.
- *   - Doc source ham onQuickPlayWithBet / onJoinRoom  -> "method join ngay".
- *   - Liet ke cac ban (TableItemView) dang hien: roomID/serverID/bet/so nguoi.
+ *   - Doc gameID cua sanh hien tai (= gid de tao/join ban).
+ *   - Doc source ham onQuickPlayWithBet / onJoinRoom  ("method join ngay").
+ *   - Neu chua dung sanh: liet ke cac component 'table/room/lobby' de tim dung ten.
  * ==========================================================================*/
 (function () {
   'use strict';
@@ -20,7 +23,16 @@
   function src(fn, n) { return safe(function () { return String(fn); }, '').slice(0, n || 2000); }
 
   var scene = safe(function () { return cc.director.getScene(); }, null);
-  var out = { scene: scene && scene.name, tableListView: null, gameIdHolders: {}, items: [], sources: {} };
+  var out = {
+    scene: scene && scene.name,
+    tableListView: null,
+    gameIdHolders: {},
+    tableish: [],
+    items: [],
+    components: {},
+    sources: {},
+    hint: ''
+  };
   if (!scene) { console.log(out); return out; }
 
   var all = [], seen = new Set();
@@ -48,11 +60,21 @@
 
   for (var i = 0; i < all.length; i++) {
     var c = all[i].c, cn = all[i].cn, node = all[i].n;
+    out.components[cn] = (out.components[cn] || 0) + 1;
 
     // Bat ky component nao giu gameID -> ung vien gid cua sanh
     ['gameID', 'gameId', 'tableGameID', 'game_id'].forEach(function (k) {
       if (c && (k in c)) out.gameIdHolders[cn + '.' + k] = safe(function () { return c[k]; });
     });
+
+    // Liet ke component lien quan table/room/lobby + gameID/keys
+    if (/table|room|lobby|list|item|hall|sanh/i.test(cn)) {
+      var o = { cls: cn, node: node.name, gameID: safe(function () { return c.gameID; }) };
+      if (c && (c.gameID === undefined)) o.gameID = safe(function () { return c.gameId; });
+      o.hasJoin = safe(function () { return typeof c.onJoinRoom === 'function'; });
+      o.hasQuick = safe(function () { return typeof c.onQuickPlayWithBet === 'function'; });
+      if (o.gameID !== undefined || o.hasJoin || o.hasQuick) out.tableish.push(o);
+    }
 
     if (cn === 'TableListView') {
       out.tableListView = {
@@ -82,13 +104,21 @@
           return Object.getOwnPropertyNames(Object.getPrototypeOf(c)).filter(function (k) { return typeof c[k] === 'function'; });
         }, [])
       });
-      // Source cua cac ham join — day chinh la "method join ngay" can tim
       ['onQuickPlayWithBet', 'onJoinRoom', 'onBookRoom', 'onCreateRoom', 'show'].forEach(function (m) {
         if (typeof c[m] === 'function' && !out.sources['TableItemView.' + m]) out.sources['TableItemView.' + m] = src(c[m]);
       });
     }
   }
+  out.tableish = out.tableish.slice(0, 60);
   out.items = out.items.slice(0, 80);
+
+  if (!out.tableListView) {
+    out.hint = "Chua o trong sanh ban (tableListView=null). Hay vao SANH cua game (man danh sach ban) " +
+               "roi chay lai. Xem 'tableish' de doan ten component dung.";
+  } else {
+    out.hint = "tableListView.props.gameID = " + JSON.stringify(
+      (out.tableListView.props || {}).gameID) + "  <-- day la gid can dien.";
+  }
 
   var txt = JSON.stringify(out, null, 2);
   console.group('%c[SUN] QUICK-JOIN probe', 'color:#f0c040;font-weight:bold');

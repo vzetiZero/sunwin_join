@@ -5,7 +5,7 @@ sunwin_headless.py - 2 tài khoản gặp nhau KHÔNG cần trình duyệt (có 
 Chạy:
   python sunwin_headless.py auth_acc1.json auth_acc2.json [bet] [gid] [soNguoi]
     bet   : mức cược (mặc định 100)
-    gid   : 1 = TLMN (mặc định)
+    gid   : 1 = TLMN, 2 = Sâm Lốc (mặc định 1)
     soNguoi: 2 (mặc định)
 
 Log ghi ra màn hình + file pair_log.txt (cùng thư mục).

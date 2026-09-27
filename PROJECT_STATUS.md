@@ -59,16 +59,29 @@ Repo: https://github.com/vzetiZero/sunwin_join
 ## 🔄 ĐANG LÀM — Sảnh Sâm/Lốc: tìm "method join bàn ngay lập tức"
 
 Mục tiêu: quick-join **bàn trống có sẵn theo mức cược** (không tạo bàn) cho các acc được chọn,
-áp dụng cho sảnh **Sâm Lốc** (và mọi sảnh khác). Hiện `pair_tool` chỉ hardcode `gid=1` (TLMN) và
-**chưa biết** gid Sâm Lốc lẫn gói socket quick-play.
+áp dụng cho sảnh **Sâm Lốc**. Tool đã có dropdown chọn **sảnh theo tên** (tự map ra gid).
 
-Công cụ bắt phương thức:
+### gid đã biết (nguồn: config `availableGames` client tự tải — `ico_*` → `gameID`)
+| Game | prefab | gid |
+|---|---|---|
+| Tiến Lên Miền Nam (TLMN) | `ico_TLMN` | **1** |
+| **Sâm Lốc** | **`ico_sam`** | **2** |
+| Mậu Binh | `ico_maubinh` | 4 |
+| Liêng | `ico_Lieng` | 5 |
+| Poker | `ico_Poker` | 6 |
+| Xì Tố | `ico_xito` | 7 |
+| Phỏm | `ico_phom` | 8 |
+| Xì Dách | `ico_blackjack` | 13 |
+| Chắn | `ico_chan` | 408 |
+
+Công cụ bắt phương thức (khi cần dò sảnh mới):
 - `headless/record_frames.py` — recorder CDP ghi mọi frame ra/vào, giải mã msgpack, đánh dấu mốc
   (`Enter`) trước/sau khi bấm "Chơi nhanh" → in ra gói join + ứng viên `gid`.
 - `probe_quickjoin.js` — đọc `TableListView.gameID` (= gid sảnh), liệt kê `TableItemView`
   (roomID/serverID/bet/số người) và **source hàm `onQuickPlayWithBet` / `onJoinRoom`**.
+- `probe_gameids.js` — liệt kê mọi ô game ở sảnh chọn game kèm tên (để đối chiếu gid).
 
-**Bước tiếp theo:** chờ dữ liệu bắt được → suy ra gói quick-join ở tầng socket → cài vào `pair_tool`.
+**Bước tiếp theo:** bắt gói quick-join ở tầng socket cho sảnh Sâm Lốc (gid=2) → cài vào `pair_tool`.
 
 ---
 
